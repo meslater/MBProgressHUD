@@ -9,6 +9,10 @@
 #import "HudDemoViewController.h"
 #import <unistd.h>
 
+
+#define SCREENSHOT_MODE 0
+
+
 @implementation HudDemoViewController
 
 #pragma mark -
@@ -16,19 +20,14 @@
 
 - (void)viewDidLoad {
 	UIView *content = [[self.view subviews] objectAtIndex:0];
+#if SCREENSHOT_MODE
+	[content.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+#endif
 	((UIScrollView *)self.view).contentSize = content.bounds.size;
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning]; // Releases the view if it doesn't have a superview
-    // Release anything that's not essential, such as cached data
-}
-
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
-    // No autoroation support when adding the HUD to a window!
-    // In that case you need to explicitly transform the HUD if you need a rotated version (i.g.,
-    // self.transform = CGAffineTransformMakeRotation(PI / 2); )
-    return YES;	
+	return YES;
 }
 
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
@@ -37,212 +36,279 @@
 }
 
 - (void)dealloc {
-    [super dealloc];
+	[super dealloc];
 }
 
 #pragma mark -
 #pragma mark IBActions
 
 - (IBAction)showSimple:(id)sender {
-    // The hud will dispable all input on the view (use the higest view possible in the view hierarchy)
-    HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	// The hud will dispable all input on the view (use the higest view possible in the view hierarchy)
+	HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:HUD];
 	
-	//HUD.graceTime = 0.5;
-	//HUD.minShowTime = 5.0;
+	// Regiser for HUD callbacks so we can remove it from the window at the right time
+	HUD.delegate = self;
 	
-    // Add HUD to screen
-    [self.navigationController.view addSubview:HUD];
-	
-    // Regisete for HUD callbacks so we can remove it from the window at the right time
-    HUD.delegate = self;
-	
-    // Show the HUD while the provided method executes in a new thread
-    [HUD showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];
+	// Show the HUD while the provided method executes in a new thread
+	[HUD showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];
 }
 
 - (IBAction)showWithLabel:(id)sender {
-	// The hud will dispable all input on the view (use the higest view possible in the view hierarchy)
-    HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
 	
-    // Add HUD to screen
-    [self.navigationController.view addSubview:HUD];
+	HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:HUD];
 	
-    // Regisete for HUD callbacks so we can remove it from the window at the right time
-    HUD.delegate = self;
+	HUD.delegate = self;
+	HUD.labelText = @"Loading";
 	
-    HUD.labelText = @"Loading";
-	
-    // Show the HUD while the provided method executes in a new thread
-    [HUD showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];
+	[HUD showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];
 }
 
 - (IBAction)showWithDetailsLabel:(id)sender {
-    // The hud will dispable all input on the view (use the higest view possible in the view hierarchy)
-    HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
 	
-    // Add HUD to screen
-    [self.navigationController.view addSubview:HUD];
+	HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:HUD];
 	
-    // Regisete for HUD callbacks so we can remove it from the window at the right time
-    HUD.delegate = self;
+	HUD.delegate = self;
+	HUD.labelText = @"Loading";
+	HUD.detailsLabelText = @"updating data";
+	HUD.square = YES;
 	
-    HUD.labelText = @"Loading";
-    HUD.detailsLabelText = @"updating data";
-	
-    // Show the HUD while the provided method executes in a new thread
-    [HUD showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];
+	[HUD showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];
 }
 
 - (IBAction)showWithLabelDeterminate:(id)sender {
-	// The hud will dispable all input on the view (use the higest view possible in the view hierarchy)
-    HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
 	
-    // Set determinate mode
-    HUD.mode = MBProgressHUDModeDeterminate;
+	HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:HUD];
 	
-    // Add HUD to screen
-    [self.navigationController.view addSubview:HUD];
+	// Set determinate mode
+	HUD.mode = MBProgressHUDModeDeterminate;
 	
-    // Regisete for HUD callbacks so we can remove it from the window at the right time
-    HUD.delegate = self;
+	HUD.delegate = self;
+	HUD.labelText = @"Loading";
 	
-    HUD.labelText = @"Loading";
+	// myProgressTask uses the HUD instance to update progress
+	[HUD showWhileExecuting:@selector(myProgressTask) onTarget:self withObject:nil animated:YES];
+}
+
+- (IBAction)showWIthLabelAnnularDeterminate:(id)sender {
+	HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:HUD];
 	
-    // Show the HUD while the provided method executes in a new thread
-    [HUD showWhileExecuting:@selector(myProgressTask) onTarget:self withObject:nil animated:YES];
+	// Set determinate mode
+	HUD.mode = MBProgressHUDModeAnnularDeterminate;
+	
+	HUD.delegate = self;
+	HUD.labelText = @"Loading";
+	
+	// myProgressTask uses the HUD instance to update progress
+	[HUD showWhileExecuting:@selector(myProgressTask) onTarget:self withObject:nil animated:YES];
+}
+
+- (IBAction)showWithLabelDeterminateHorizontalBar:(id)sender {
+	
+	HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:HUD];
+	
+	// Set determinate bar mode
+	HUD.mode = MBProgressHUDModeDeterminateHorizontalBar;
+	
+	HUD.delegate = self;
+	
+	// myProgressTask uses the HUD instance to update progress
+	[HUD showWhileExecuting:@selector(myProgressTask) onTarget:self withObject:nil animated:YES];
 }
 
 - (IBAction)showWithCustomView:(id)sender {
-	// The hud will dispable all input on the view (use the higest view possible in the view hierarchy)
-    HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
 	
-	// The sample image is based on the work by www.pixelpressicons.com, http://creativecommons.org/licenses/by/2.5/ca/
+	HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:HUD];
+	
+	// The sample image is based on the work by http://www.pixelpressicons.com, http://creativecommons.org/licenses/by/2.5/ca/
 	// Make the customViews 37 by 37 pixels for best results (those are the bounds of the build-in progress indicators)
 	HUD.customView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"37x-Checkmark.png"]] autorelease];
 	
-    // Set custom view mode
-    HUD.mode = MBProgressHUDModeCustomView;
+	// Set custom view mode
+	HUD.mode = MBProgressHUDModeCustomView;
 	
-	// Add HUD to screen
-    [self.navigationController.view addSubview:HUD];
+	HUD.delegate = self;
+	HUD.labelText = @"Completed";
 	
-	// Regisete for HUD callbacks so we can remove it from the window at the right time
-    HUD.delegate = self;
-	
-    HUD.labelText = @"Completed";
-	
-	// This would only show the completed text with no visible custom view
-	// HUD.customView = [[UIView alloc] initWithFrame:CGRectZero];
-	
-	// Show the HUD while the provided method executes in a new thread
-    [HUD showWhileExecuting:@selector(myProgressTask) onTarget:self withObject:nil animated:YES];
+	[HUD show:YES];
+	[HUD hide:YES afterDelay:3];
 }
 
 - (IBAction)showWithLabelMixed:(id)sender {
-	// The hud will dispable all input on the view (use the higest view possible in the view hierarchy)
-    HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
 	
-    // Add HUD to screen
-    [self.navigationController.view addSubview:HUD];
+	HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:HUD];
 	
-    // Regisete for HUD callbacks so we can remove it from the window at the right time
-    HUD.delegate = self;
+	HUD.delegate = self;
+	HUD.labelText = @"Connecting";
+	HUD.minSize = CGSizeMake(135.f, 135.f);
 	
-    HUD.labelText = @"Connecting";
-	
-    // Show the HUD while the provided method executes in a new thread
-    [HUD showWhileExecuting:@selector(myMixedTask) onTarget:self withObject:nil animated:YES];
+	[HUD showWhileExecuting:@selector(myMixedTask) onTarget:self withObject:nil animated:YES];
 }
 
 - (IBAction)showUsingBlocks:(id)sender {
-	dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
-		// Show the HUD in the main tread 
-		dispatch_async(dispatch_get_main_queue(), ^{
-			// No need to hod onto (retain)
-			MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:self.navigationController.view animated:YES];
-			hud.labelText = @"Loading";
-		});
-		
-		// Do a taks in the background
+#if NS_BLOCKS_AVAILABLE
+	MBProgressHUD *hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:hud];
+	hud.labelText = @"With a block";
+	
+	[hud showAnimated:YES whileExecutingBlock:^{
 		[self myTask];
-		
-		// Hide the HUD in the main tread 
-		dispatch_async(dispatch_get_main_queue(), ^{
-			[MBProgressHUD hideHUDForView:self.navigationController.view animated:YES];
-		});
-	});
+	} completionBlock:^{
+		[hud removeFromSuperview];
+		[hud release];
+	}];
+#endif
 }
 
 - (IBAction)showOnWindow:(id)sender {
-	// The hud will dispable all input on the view
-    HUD = [[MBProgressHUD alloc] initWithView:self.view.window];
+	// The hud will dispable all input on the window
+	HUD = [[MBProgressHUD alloc] initWithView:self.view.window];
+	[self.view.window addSubview:HUD];
 	
-    // Add HUD to screen
-    [self.view.window addSubview:HUD];
+	HUD.delegate = self;
+	HUD.labelText = @"Loading";
 	
-    // Regisete for HUD callbacks so we can remove it from the window at the right time
-    HUD.delegate = self;
+	[HUD showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];
+}
+
+- (IBAction)showURL:(id)sender {
+	NSURL *URL = [NSURL URLWithString:@"http://a1408.g.akamai.net/5/1408/1388/2005110403/1a1a1ad948be278cff2d96046ad90768d848b41947aa1986/sample_iPod.m4v.zip"];
+	NSURLRequest *request = [NSURLRequest requestWithURL:URL];
 	
-    HUD.labelText = @"Loading";
+	NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
+	[connection start];
+	[connection release];
 	
-    // Show the HUD while the provided method executes in a new thread
-    [HUD showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];
+	HUD = [[MBProgressHUD showHUDAddedTo:self.navigationController.view animated:YES] retain];
+	HUD.delegate = self;
+}
+
+
+- (IBAction)showWithGradient:(id)sender {
+	
+	HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:HUD];
+	
+	HUD.dimBackground = YES;
+	
+	// Regiser for HUD callbacks so we can remove it from the window at the right time
+	HUD.delegate = self;
+	
+	// Show the HUD while the provided method executes in a new thread
+	[HUD showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];
+}
+
+- (IBAction)showTextOnly:(id)sender {
+	
+	MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:self.navigationController.view animated:YES];
+	
+	// Configure for text only and offset down
+	hud.mode = MBProgressHUDModeText;
+	hud.labelText = @"Some message...";
+	hud.margin = 10.f;
+	hud.yOffset = 150.f;
+	hud.removeFromSuperViewOnHide = YES;
+	
+	[hud hide:YES afterDelay:3];
+}
+
+- (IBAction)showWithColor:(id)sender{
+	HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+	[self.navigationController.view addSubview:HUD];
+	
+	// Set the hud to display with a color
+	HUD.color = [UIColor colorWithRed:0.23 green:0.50 blue:0.82 alpha:0.90];
+	
+	HUD.delegate = self;
+	[HUD showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];	
 }
 
 #pragma mark -
 #pragma mark Execution code
 
 - (void)myTask {
-    // Do something usefull in here instead of sleeping ...
-    sleep(3);
-    // Labels can be changed during the execution
-    //HUD.detailsLabelText = @"Something";
-    //sleep(3);
+	// Do something usefull in here instead of sleeping ...
+	sleep(3);
 }
 
 - (void)myProgressTask {
-    // This just increases the progress indicator in a loop
-    float progress = 0.0f;
-    while (progress < 1.0f) {
-        progress += 0.01f;
-        HUD.progress = progress;
-        usleep(50000);
-    }
+	// This just increases the progress indicator in a loop
+	float progress = 0.0f;
+	while (progress < 1.0f) {
+		progress += 0.01f;
+		HUD.progress = progress;
+		usleep(50000);
+	}
 }
 
 - (void)myMixedTask {
-    // Indeterminate mode
-    sleep(2);
-    // Switch to determinate mode
-    HUD.mode = MBProgressHUDModeDeterminate;
-    HUD.labelText = @"Downloading";
-    float progress = 0.0f;
-    while (progress < 1.0f)
-    {
-        progress += 0.01f;
-        HUD.progress = progress;
-        usleep(50000);
-    }
-    // Back to indeterminate mode
-    HUD.mode = MBProgressHUDModeIndeterminate;
-    HUD.labelText = @"Cleaning up";
-    sleep(2);
-	// The sample image is based on the work by www.pixelpressicons.com, http://creativecommons.org/licenses/by/2.5/ca/
-	// Make the customViews 37 by 37 pixels for best results (those are the bounds of the build-in progress indicators)
-	HUD.customView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"37x-Checkmark.png"]] autorelease];
+	// Indeterminate mode
+	sleep(2);
+	// Switch to determinate mode
+	HUD.mode = MBProgressHUDModeDeterminate;
+	HUD.labelText = @"Progress";
+	float progress = 0.0f;
+	while (progress < 1.0f)
+	{
+		progress += 0.01f;
+		HUD.progress = progress;
+		usleep(50000);
+	}
+	// Back to indeterminate mode
+	HUD.mode = MBProgressHUDModeIndeterminate;
+	HUD.labelText = @"Cleaning up";
+	sleep(2);
+	// UIImageView is a UIKit class, we have to initialize it on the main thread
+	__block UIImageView *imageView;
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		UIImage *image = [UIImage imageNamed:@"37x-Checkmark.png"];
+		imageView = [[UIImageView alloc] initWithImage:image];
+	});
+	HUD.customView = [imageView autorelease];
 	HUD.mode = MBProgressHUDModeCustomView;
 	HUD.labelText = @"Completed";
 	sleep(2);
 }
 
 #pragma mark -
+#pragma mark NSURLConnectionDelegete
+
+- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
+	expectedLength = MAX([response expectedContentLength], 1);
+	currentLength = 0;
+	HUD.mode = MBProgressHUDModeDeterminate;
+}
+
+- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data {
+	currentLength += [data length];
+	HUD.progress = currentLength / (float)expectedLength;
+}
+
+- (void)connectionDidFinishLoading:(NSURLConnection *)connection {
+	HUD.customView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"37x-Checkmark.png"]] autorelease];
+	HUD.mode = MBProgressHUDModeCustomView;
+	[HUD hide:YES afterDelay:2];
+}
+
+- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
+	[HUD hide:YES];
+}
+
+#pragma mark -
 #pragma mark MBProgressHUDDelegate methods
 
 - (void)hudWasHidden:(MBProgressHUD *)hud {
-	NSLog(@"Hud: %@", hud);
-    // Remove HUD from screen when the HUD was hidded
-    [HUD removeFromSuperview];
-    [HUD release];
+	// Remove HUD from screen when the HUD was hidded
+	[HUD removeFromSuperview];
+	[HUD release];
+	HUD = nil;
 }
 
 @end
